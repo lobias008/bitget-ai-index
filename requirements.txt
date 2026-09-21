@@ -1,0 +1,29 @@
+# =============================================================================
+# Python requirements - The Morning Sword Playbook strategy
+# =============================================================================
+# Target runtime: the GetAgent Playbook sandbox (Python 3.11+).
+#
+# IMPORTANT: this file is for LOCAL validation and testing only.
+#   - `getagent` is NOT on PyPI. It is injected by the Playbook sandbox runtime
+#     and cannot be pip-installed. `src/main.py` does
+#     `from getagent import data, runtime`, so importing it locally will fail
+#     unless you stub that module. Tests therefore exercise the pure functions
+#     via AST-level or stubbed imports - do not "fix" this by adding getagent
+#     here or by importing it at module scope.
+#   - Only these imports are allowed inside src/** by the upload validator:
+#     getagent, getclaw, nautilus_trader, pandas, numpy, json, math, datetime,
+#     pathlib, asyncio, typing, dataclasses, collections, functools, re,
+#     decimal, statistics, itertools, operator, copy, enum, abc, numbers,
+#     fractions. `requests`, `subprocess`, and `os` are BLOCKED.
+#   - Never add a dependency to this file without also confirming it is on the
+#     validator allowlist above, or the package upload will fail with 422.
+# =============================================================================
+
+# --- Strategy runtime (used by src/main.py) ----------------------------------
+pandas>=2.2,<4.0
+numpy>=1.26,<3.0
+
+# --- Local validation / packaging tooling (dev only) -------------------------
+# Required for the official validator to parse manifest.yaml properly.
+# Without it, validate.py silently falls back to a weaker built-in parser.
+PyYAML>=6.0,<7.0

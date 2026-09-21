@@ -1,0 +1,39 @@
+@import "./styles/cyberpunk.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #d8fff0;
+  background: #020403;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(0, 245, 138, 0.14), transparent 26rem),
+    radial-gradient(circle at 84% 18%, rgba(255, 37, 77, 0.13), transparent 24rem),
+    linear-gradient(135deg, #020403 0%, #05100d 45%, #100407 100%);
+}
+
+button,
+textarea,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}

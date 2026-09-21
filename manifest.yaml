@@ -1,0 +1,406 @@
+name: the-morning-sword
+display_name: "The Morning Sword"
+display_name_i18n:
+  en: "The Morning Sword"
+  zh: "The Morning Sword"
+  zh-tw: "The Morning Sword"
+  es: "La Espada de la Manana"
+  ja: "The Morning Sword"
+  vi: "Thanh Kiem Binh Minh"
+version: "1.0.0"
+description: "Multi-asset GetClaw confluence strategy for BTC, Gold, Oil proxy, and S&P exposure."
+description_i18n:
+  en: "Multi-asset GetClaw confluence strategy for BTC, Gold, Oil proxy, and S&P exposure."
+  zh: "Multi-asset GetClaw confluence strategy for BTC, Gold, Oil proxy, and S&P exposure."
+  zh-tw: "Multi-asset GetClaw confluence strategy for BTC, Gold, Oil proxy, and S&P exposure."
+  es: "Estrategia multi-activo de confluencia GetClaw para BTC, oro, proxy de petroleo y S&P."
+  ja: "Multi-asset GetClaw confluence strategy for BTC, Gold, Oil proxy, and S&P exposure."
+  vi: "Chien luoc GetClaw da tai san cho BTC, vang, dai dien dau tho va S&P."
+long_description: |
+  The Morning Sword is a multi-asset momentum and pullback Playbook designed to capture orderly continuation after a broad trend has already aligned. It scans liquid Bitget contract markets across digital assets, precious metals, an oil-linked proxy, and equity-index exposure, then waits for price to return toward a higher-quality participation zone before issuing a signal. The thesis is that asymmetric trades are strongest when the larger trend, pullback behavior, liquidity, and momentum temperature all agree.
+
+  The strategy enters long only when the higher timeframe trend stack supports upside continuation and the lower timeframe pullback shows renewed participation. It avoids chasing extended candles and instead looks for a controlled reset where price, volume behavior, and momentum sit in a balanced zone. Asset-specific gates make the decision stricter: gold is allowed only during the most liquid western sessions, BTC must pass a funding sanity check, and oil-linked exposure requires additional trend confirmation.
+
+  Exits are built around turning early strength into protected optionality. The first profit event reduces exposure and immediately converts the remaining trade into a breakeven protected runner. The rest of the position follows a trend-trailing stop so larger directional moves can keep paying without letting a winner turn into an avoidable loss.
+
+  Subscribers can tune the trading symbol list, margin budget, leverage, risk budget, stop distance behavior, session gates, and the current daily loss input used by the circuit breaker. Higher leverage and larger margin budgets increase both opportunity and drawdown. Stricter session and funding gates reduce signal count but can improve selectivity.
+
+  The main risk is that multi-asset trend systems underperform during sideways markets, event gaps, thin liquidity, and fast reversals after macro news. Funding spikes, inventory events, and session transitions can also distort execution quality. This Playbook is a disciplined signal framework, not a guarantee of profit, and past performance or clean confluence does not remove market risk.
+market_type: contract
+trading_symbols:
+  - BTCUSDT
+  - XAUUSDT
+  - AXTIUSDT
+  - SP500USDT
+tags:
+  - getclaw
+  - multi-asset
+  - trend
+  - confluence
+  - bitget
+schedule:
+  cron: "0 */4 * * *"
+  tz: "Asia/Shanghai"
+decision_mode: deterministic
+backtest_support: none
+runtime_profile: deterministic
+execution_mode: signal_only
+follow_trade_supported: false
+strategy_config:
+  trading_symbols:
+    - BTCUSDT
+    - XAUUSDT
+    - AXTIUSDT
+    - SP500USDT
+  # -------------------------------------------------------------------------
+  # Instrument registry (configuration-driven). See ARCHITECTURE.md.
+  #
+  # Gate applicability used to be hardcoded per symbol inside src/main.py
+  # (`symbol != "BTCUSDT"`, `symbol != "XAUUSDT"`, `symbol == "AXTIUSDT"`).
+  # It now lives here. Every value below reproduces the previous hardcoded
+  # behavior EXACTLY for the four verified instruments; src/instruments.py
+  # falls back to these same defaults if the block is missing.
+  #
+  # `symbol_verification` records provenance, not permission:
+  #   native_bitget_contract   - core Bitget crypto contract
+  #   documented_in_sdk_docs   - named as a real pair in the installed SDK docs
+  #   verified_public_api      - confirmed by a recorded live Bitget public
+  #                              API response; see the symbol's
+  #                              verified_metadata block and the report file
+  #   inherited_unverified     - carried over from the original authoring
+  #                              session; NOT confirmed in SDK docs and must be
+  #                              re-checked against Bitget's public contracts API
+  # -------------------------------------------------------------------------
+  symbol_roles:
+    BTCUSDT:
+      display_name: "Bitcoin"
+      asset_class: crypto
+      market_type: contract
+      settlement: crypto_perpetual
+      trading_session: continuous_24x7
+      symbol_verification: verified_public_api
+      verified_metadata:
+        product_type: USDT-FUTURES
+        market: contract
+        trading_status: normal
+        price_precision: 1
+        quantity_precision: 4
+        min_order_size: 0.0001
+        size_multiplier: 0.0001
+        base_coin: BTC
+        quote_coin: USDT
+        market_data_available: true
+        verified_at: "2026-09-21T21:18:41.818Z"
+        source: "GET /api/v2/mix/market/contracts?productType=USDT-FUTURES&symbol=BTCUSDT"
+        report: "output/instrument-verification/report-2026-09-21T21-18-47-701Z.json"
+      strategy_eligibility: enabled
+      execution_availability: signal_only
+      supported_indicators: [ema, rsi, atr, volume, parabolic_sar]
+      risk_profile: standard
+      note: "BTC crypto perpetual"
+      gates:
+        funding:
+          applies: true
+          abs_limit_pct: 0.05
+        session:
+          applies: false
+        parabolic_sar:
+          applies: false
+    XAUUSDT:
+      display_name: "Gold"
+      asset_class: metal
+      market_type: contract
+      settlement: rwa_perpetual
+      trading_session: london_new_york
+      symbol_verification: verified_public_api
+      verified_metadata:
+        product_type: USDT-FUTURES
+        market: contract
+        trading_status: normal
+        price_precision: 2
+        quantity_precision: 2
+        min_order_size: 0.01
+        size_multiplier: 0.01
+        base_coin: XAU
+        quote_coin: USDT
+        market_data_available: true
+        verified_at: "2026-09-21T21:18:43.941Z"
+        source: "GET /api/v2/mix/market/contracts?productType=USDT-FUTURES&symbol=XAUUSDT"
+        report: "output/instrument-verification/report-2026-09-21T21-18-47-701Z.json"
+      strategy_eligibility: enabled
+      execution_availability: signal_only
+      supported_indicators: [ema, rsi, atr, volume, parabolic_sar]
+      risk_profile: standard
+      note: "Gold RWA perpetual; confirmed as a Bitget RWA contract in the SDK docs"
+      gates:
+        funding:
+          applies: false
+        session:
+          applies: true
+          windows_utc: [[7, 10], [13, 16]]
+        parabolic_sar:
+          applies: false
+    AXTIUSDT:
+      display_name: "WTI Oil (RWA proxy)"
+      asset_class: commodity
+      market_type: contract
+      settlement: rwa_perpetual
+      trading_session: continuous_with_event_risk
+      symbol_verification: verified_public_api
+      verified_metadata:
+        product_type: USDT-FUTURES
+        market: contract
+        trading_status: normal
+        price_precision: 2
+        quantity_precision: 2
+        min_order_size: 0.01
+        size_multiplier: 0.01
+        base_coin: AXTI
+        quote_coin: USDT
+        market_data_available: true
+        verified_at: "2026-09-21T21:18:45.827Z"
+        source: "GET /api/v2/mix/market/contracts?productType=USDT-FUTURES&symbol=AXTIUSDT"
+        report: "output/instrument-verification/report-2026-09-21T21-18-47-701Z.json"
+      strategy_eligibility: enabled
+      execution_availability: signal_only
+      supported_indicators: [ema, rsi, atr, volume, parabolic_sar]
+      risk_profile: standard
+      note: "Oil-linked RWA proxy; requested OILUSDT was not found in Bitget public contracts"
+      gates:
+        funding:
+          applies: false
+        session:
+          applies: false
+        parabolic_sar:
+          applies: true
+    SP500USDT:
+      display_name: "S&P 500 Index"
+      asset_class: stock
+      market_type: contract
+      settlement: rwa_perpetual
+      trading_session: us_equity_hours_proxy
+      symbol_verification: verified_public_api
+      verified_metadata:
+        product_type: USDT-FUTURES
+        market: contract
+        trading_status: normal
+        price_precision: 1
+        quantity_precision: 4
+        min_order_size: 0.0001
+        size_multiplier: 0.0001
+        base_coin: SP500
+        quote_coin: USDT
+        market_data_available: true
+        verified_at: "2026-09-21T21:18:47.701Z"
+        source: "GET /api/v2/mix/market/contracts?productType=USDT-FUTURES&symbol=SP500USDT"
+        report: "output/instrument-verification/report-2026-09-21T21-18-47-701Z.json"
+      strategy_eligibility: enabled
+      execution_availability: signal_only
+      supported_indicators: [ema, rsi, atr, volume, parabolic_sar]
+      risk_profile: standard
+      note: "S&P 500 RWA perpetual; requested SPX500USDT was not found in Bitget public contracts"
+      gates:
+        funding:
+          applies: false
+        session:
+          applies: false
+        parabolic_sar:
+          applies: false
+        # README documents a 1D EMA 50 bounce filter for this symbol, but
+        # src/main.py never implemented it. Kept disabled so behavior is
+        # preserved exactly. Enabling it would be a strategy change.
+        daily_ema50_bounce:
+          applies: false
+          implemented: false
+  margin_budget: "100"
+  leverage: 3
+  risk_per_trade_pct: 1.0
+  atr_stop_multiple: 1.5
+  partial_take_profit_rr: 2.0
+  partial_take_profit_pct: 50.0
+  runner_target_rr: 4.0
+  circuit_breaker_daily_loss_pct: -2.0
+  reported_daily_pnl_pct: 0.0
+  funding_rate_abs_limit_pct: 0.05
+  london_session_utc:
+    - 7
+    - 10
+  new_york_session_utc:
+    - 13
+    - 16
+
+  # -------------------------------------------------------------------------
+  # Asset-class definitions for the multi-asset AI Index Trading Platform.
+  #
+  # DECLARING A CLASS HERE DOES NOT ENABLE TRADING IN IT. A class becomes
+  # usable only when (a) its Bitget symbol has been confirmed through the
+  # public config API recorded in `symbol_discovery`, and (b) a real instrument
+  # is added to `symbol_roles` with a verified symbol.
+  #
+  # `sdk_asset_class` maps each platform section onto the enum documented by
+  # the installed SDK (crypto, stock, rwa, commodity, metal, other), so basket
+  # or interop payloads stay valid without inventing new taxonomy values.
+  #
+  # No symbol anywhere below was invented. Classes with no confirmed Bitget
+  # instrument carry an empty `verified_symbols` list and
+  # `new_instruments_allowed: false`.
+  # -------------------------------------------------------------------------
+  asset_classes:
+    crypto:
+      label: "Crypto"
+      platform_section: "Crypto"
+      sdk_asset_class: crypto
+      bitget_data_verified: true
+      new_instruments_allowed: true
+      default_market_type: contract
+      default_trading_session: continuous_24x7
+      funding_rate_available: true
+      default_execution_availability: signal_only
+      live_trading_supported: false
+      verified_symbols: [BTCUSDT]
+      symbol_discovery: "/api/v2/mix/market/contracts?productType=USDT-FUTURES"
+      notes: "Native Bitget USDT perpetuals. Data path data.crypto.futures.kline is confirmed by the SDK docs."
+    rtoken:
+      label: "rToken"
+      platform_section: "rToken"
+      sdk_asset_class: rwa
+      bitget_data_verified: false
+      new_instruments_allowed: false
+      default_market_type: contract
+      default_trading_session: unknown
+      funding_rate_available: false
+      default_execution_availability: unavailable
+      live_trading_supported: false
+      verified_symbols: []
+      symbol_discovery: "/api/v2/spot/public/symbols and /api/v2/mix/market/contracts?productType=USDT-FUTURES"
+      notes: "Bitget RWA tokens. Naming is confirmed by SDK docs: spot uses an R prefix (RAAPLUSDT), contracts omit it (AAPLUSDT). No instrument is enabled here because none has been confirmed for this Playbook."
+    stock:
+      label: "Stock Preps"
+      platform_section: "Stock Preps"
+      sdk_asset_class: stock
+      bitget_data_verified: true
+      new_instruments_allowed: false
+      default_market_type: contract
+      default_trading_session: us_equity_hours_proxy
+      funding_rate_available: false
+      default_execution_availability: signal_only
+      live_trading_supported: false
+      verified_symbols: [SP500USDT]
+      symbol_discovery: "/api/v2/mix/market/contracts?productType=USDT-FUTURES"
+      notes: "SP500USDT was live-verified on 2026-09-21 via the discovery endpoint (symbolStatus normal, ticker live; see symbol_roles.SP500USDT.verified_metadata). AAPLUSDT and RAAPLUSDT are documented real pairs but are deliberately NOT enabled here. Re-verify before adding instruments."
+    cfd:
+      label: "CFD"
+      platform_section: "CFD"
+      sdk_asset_class: other
+      bitget_data_verified: false
+      new_instruments_allowed: false
+      default_market_type: unknown
+      default_trading_session: unknown
+      funding_rate_available: false
+      default_execution_availability: unavailable
+      live_trading_supported: false
+      verified_symbols: []
+      symbol_discovery: "unconfirmed - Bitget does not document a CFD product type in the installed SDK"
+      notes: "CFD is not a documented Bitget product type. Do not assume it shares the futures kline API. Disabled until the capability is verified."
+    commodity:
+      label: "Commodity"
+      platform_section: "Commodity"
+      sdk_asset_class: commodity
+      bitget_data_verified: true
+      new_instruments_allowed: false
+      default_market_type: contract
+      default_trading_session: continuous_with_event_risk
+      funding_rate_available: false
+      default_execution_availability: signal_only
+      live_trading_supported: false
+      verified_symbols: [AXTIUSDT]
+      symbol_discovery: "/api/v2/mix/market/contracts?productType=USDT-FUTURES"
+      notes: "AXTIUSDT was live-verified on 2026-09-21 via the discovery endpoint (symbolStatus normal, ticker live; see symbol_roles.AXTIUSDT.verified_metadata). Note that the SDK commodity data domain serves research series, NOT Bitget contract klines; contract data must come from data.crypto.futures. Re-verify before adding instruments."
+    metal:
+      label: "Metal"
+      platform_section: "Metal"
+      sdk_asset_class: metal
+      bitget_data_verified: true
+      new_instruments_allowed: true
+      default_market_type: contract
+      default_trading_session: london_new_york
+      funding_rate_available: false
+      default_execution_availability: signal_only
+      live_trading_supported: false
+      verified_symbols: [XAUUSDT]
+      symbol_discovery: "/api/v2/mix/market/contracts?productType=USDT-FUTURES"
+      notes: "XAUUSDT is explicitly documented in the SDK as a Bitget RWA gold contract, and helpers accept XAU or XAUUSDT for the RWA contract namespace."
+    ai_index:
+      label: "AI Indexes"
+      platform_section: "AI Indexes"
+      sdk_asset_class: other
+      bitget_data_verified: false
+      new_instruments_allowed: false
+      default_market_type: unknown
+      default_trading_session: unknown
+      funding_rate_available: false
+      default_execution_availability: unavailable
+      live_trading_supported: false
+      verified_symbols: []
+      symbol_discovery: "unconfirmed - no Bitget AI index contract is documented in the installed SDK"
+      notes: "Composite/index exposure would likely need to be synthesised from constituents or a basket output. No Bitget symbol is assumed to exist. Disabled until the capability is verified."
+
+  # -------------------------------------------------------------------------
+  # Named risk tiers. `standard` resolves to exactly the global values already
+  # present in strategy_config, so adopting it is a no-op for the four existing
+  # instruments. No profile may exceed the global 1.0 percent risk cap or the
+  # 20x leverage cap enforced by user_config_schema. Risk limits stay
+  # deterministic code; profiles only select within those fixed bounds.
+  # -------------------------------------------------------------------------
+  risk_profiles:
+    conservative:
+      risk_per_trade_pct: 0.5
+      atr_stop_multiple: 2.0
+      max_leverage: 2
+      description: "Half risk budget with a wider volatility stop, for reduced drawdown."
+    standard:
+      risk_per_trade_pct: 1.0
+      atr_stop_multiple: 1.5
+      max_leverage: 3
+      description: "Identical to the original hardcoded strategy: 1.0 percent risk, 1.5x ATR stop."
+user_config_schema:
+  trading_symbols:
+    type: array
+    item_type: string
+    default:
+      - BTCUSDT
+      - XAUUSDT
+      - AXTIUSDT
+      - SP500USDT
+    options:
+      - BTCUSDT
+      - XAUUSDT
+      - AXTIUSDT
+      - SP500USDT
+    min_items: 1
+    max_items: 4
+    label: "Trading symbols"
+  margin_budget:
+    type: string
+    default: "100"
+    pattern: "^[0-9]+(\\.[0-9]+)?$"
+    label: "Margin budget USDT"
+  leverage:
+    type: integer
+    default: 3
+    min: 1
+    max: 20
+    label: "Leverage"
+  risk_per_trade_pct:
+    type: number
+    default: 1.0
+    min: 0.1
+    max: 1.0
+    label: "Risk per trade percent"
+  reported_daily_pnl_pct:
+    type: number
+    default: 0.0
+    min: -100.0
+    max: 100.0
+    label: "Reported daily PnL percent"
+

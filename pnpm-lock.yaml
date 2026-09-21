@@ -1,0 +1,25 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@bitget-ai/getagent-skill':
+        specifier: 0.5.0
+        version: 0.5.0
+
+packages:
+
+  '@bitget-ai/getagent-skill@0.5.0':
+    resolution: {integrity: sha512-DTGHGGs9efpocMs6I54vFUB/5Z8eEIu/2lWxhDpeZ2dWCAFzGTgQ91B1u3QCGneI3bHzbmYd59nIU4WG9so6tg==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+snapshots:
+
+  '@bitget-ai/getagent-skill@0.5.0': {}
+

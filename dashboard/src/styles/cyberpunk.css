@@ -1,0 +1,73 @@
+.grid-floor {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.36;
+  background-image:
+    linear-gradient(rgba(0, 245, 138, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 138, 0.08) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.85), transparent 78%);
+}
+
+.scanline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.045), transparent);
+  transform: translateY(-100%);
+  animation: scan 4.2s linear infinite;
+}
+
+.ticker-track {
+  animation: ticker 20s linear infinite;
+}
+
+.pulse-dot {
+  animation: pulse-dot 1.35s ease-in-out infinite;
+}
+
+.spark-path {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+  animation: draw-spark 1.2s ease-out forwards;
+}
+
+.drawer-shadow {
+  box-shadow: -30px 0 80px rgba(0, 0, 0, 0.55), 0 0 32px rgba(0, 245, 138, 0.15);
+}
+
+@keyframes scan {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes draw-spark {
+  to {
+    stroke-dashoffset: 0;
+  }
+}

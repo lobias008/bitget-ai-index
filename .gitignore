@@ -1,0 +1,102 @@
+# --- Dependencies & build output ---
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+.vite-temp/
+
+# --- Secrets & credentials ---
+# Never commit real credentials. Only the placeholder template is tracked.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+access-key*
+
+# --- Local-only backups (may contain plaintext secrets) ---
+.backup/
+*.bak
+
+# --- Bundled local toolchain binaries (MinGit, GitHub CLI) ---
+.tools/
+
+# --- Python bytecode & virtualenvs ---
+**/__pycache__/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Playbook local-only paths (rejected by GetAgent upload validation) ---
+# NOTE: `tests/` is intentionally NOT ignored. The test suite must stay under
+# version control. It is kept out of the upload artifact by
+# scripts/package-playbook.mjs, which stages only manifest.yaml, README.md,
+# src/** and backtest.yaml. Verified by `tar tzf` on the built package.
+notebooks/
+research/
+backtest_results/
+logs/
+output/
+*.tar.gz
+
+# --- Local state & caches ---
+*.local
+*.state
+*.state.json
+local-state/
+.cache/
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Editor / OS noise ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies and builds
+node_modules/
+dist/
+dashboard/dist/
+
+# Local tools and backups
+.tools/
+.backup/
+*.bak
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Generated reports and logs
+output/
+verify-run.log
+*.log
+
+# System files
+.DS_Store
+Thumbs.db

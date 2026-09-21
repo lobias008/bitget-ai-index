@@ -1,0 +1,23 @@
+{
+  "name": "ai-index-platform-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "React + Vite dashboard for the multi-asset AI Index Trading Platform. Presentation only: it renders mock/local data and must never place orders or hold credentials.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "vite": "^7.0.0"
+  }
+}

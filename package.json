@@ -1,0 +1,44 @@
+{
+  "name": "bitget-ai-index",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bitget AI Index: multi-asset AI index trading platform (Crypto, rToken, Stock Preps, CFD, Commodity, Metal, AI Indexes). Hosts The Morning Sword signal-only Playbook strategy plus a React dashboard. Safety-first: no script in this file publishes, deploys, or trades.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node scripts/status.mjs",
+    "check": "node scripts/check.mjs",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "test": "node --test --test-concurrency=1 \"tests/*.test.mjs\"",
+    "test:python": "node scripts/run-python-tests.mjs",
+    "validate": "node scripts/validate-playbook.mjs",
+    "package": "node scripts/package-playbook.mjs",
+    "verify:instruments": "node scripts/verify-instruments.mjs",
+    "playbook:publish": "node scripts/publish-playbook.mjs",
+    "dashboard:install": "npm --prefix dashboard install",
+    "dashboard:dev": "npm --prefix dashboard run dev",
+    "dashboard:build": "npm --prefix dashboard run build",
+    "dashboard:preview": "npm --prefix dashboard run preview"
+  },
+  "keywords": [
+    "the-morning-sword",
+    "bitget",
+    "getagent",
+    "getclaw",
+    "playbook",
+    "trading-agent",
+    "multi-asset",
+    "confluence",
+    "ai-index-platform"
+  ],
+  "author": "lobias008",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@bitget-ai/getagent-skill": "0.5.0"
+  }
+}
+
+
