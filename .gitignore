@@ -69,34 +69,3 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
-
-# Credentials
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-
-# Dependencies and builds
-node_modules/
-dist/
-dashboard/dist/
-
-# Local tools and backups
-.tools/
-.backup/
-*.bak
-
-# Python
-__pycache__/
-*.pyc
-.venv/
-
-# Generated reports and logs
-output/
-verify-run.log
-*.log
-
-# System files
-.DS_Store
-Thumbs.db

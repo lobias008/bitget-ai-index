@@ -14,6 +14,8 @@
     "validate": "node scripts/validate-playbook.mjs",
     "package": "node scripts/package-playbook.mjs",
     "verify:instruments": "node scripts/verify-instruments.mjs",
+    "dashboard:registry": "node scripts/generate-dashboard-registry.mjs",
+    "dashboard:registry:check": "node scripts/generate-dashboard-registry.mjs --check",
     "playbook:publish": "node scripts/publish-playbook.mjs",
     "dashboard:install": "npm --prefix dashboard install",
     "dashboard:dev": "npm --prefix dashboard run dev",

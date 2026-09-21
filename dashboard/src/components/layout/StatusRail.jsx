@@ -1,10 +1,11 @@
-export default function StatusRail({ t, macro }) {
+export default function StatusRail({ t, registry }) {
+  const verifiedCount = registry.instruments.filter((instrument) => instrument.verified).length;
   const items = [
-    t.statusOnline,
-    t.activeFeeds,
-    t.latency,
-    `${t.sentiment}: ${macro.sentiment}`,
-    `${t.liquidity}: ${macro.liquidity}`,
+    `${t.executionMode}: ${registry.execution_mode}`,
+    `${t.liveTrading}: ${t.disabled}`,
+    `${t.instrumentsVerified}: ${verifiedCount}/${registry.instruments.length}`,
+    `${t.sections}: ${registry.asset_classes.length}`,
+    t.pricesPending,
   ];
 
   return (

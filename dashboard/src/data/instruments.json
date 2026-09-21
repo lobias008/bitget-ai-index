@@ -1,0 +1,289 @@
+{
+  "schema_version": 1,
+  "generated_by": "npm run dashboard:registry (scripts/generate-dashboard-registry.mjs)",
+  "source": {
+    "manifest": "manifest.yaml",
+    "sha256_prefix16": "20318ffc2fc414ce",
+    "playbook": "the-morning-sword",
+    "version": "1.0.0"
+  },
+  "execution_mode": "signal_only",
+  "live_prices": false,
+  "policy": {
+    "live_trading": "disabled",
+    "orders": "the dashboard never places orders",
+    "prices": "not bundled; read-only live data is a later milestone",
+    "verification": "symbols are verified only from recorded Bitget public-API responses"
+  },
+  "asset_classes": [
+    {
+      "name": "crypto",
+      "label": "Crypto",
+      "platform_section": "Crypto",
+      "sdk_asset_class": "crypto",
+      "bitget_data_verified": true,
+      "new_instruments_allowed": true,
+      "live_trading_supported": false,
+      "default_execution_availability": "signal_only",
+      "symbols": [
+        "BTCUSDT"
+      ],
+      "symbol_count": 1,
+      "pending_verification": false
+    },
+    {
+      "name": "rtoken",
+      "label": "rToken",
+      "platform_section": "rToken",
+      "sdk_asset_class": "rwa",
+      "bitget_data_verified": false,
+      "new_instruments_allowed": false,
+      "live_trading_supported": false,
+      "default_execution_availability": "unavailable",
+      "symbols": [],
+      "symbol_count": 0,
+      "pending_verification": true
+    },
+    {
+      "name": "stock",
+      "label": "Stock Preps",
+      "platform_section": "Stock Preps",
+      "sdk_asset_class": "stock",
+      "bitget_data_verified": true,
+      "new_instruments_allowed": false,
+      "live_trading_supported": false,
+      "default_execution_availability": "signal_only",
+      "symbols": [
+        "SP500USDT"
+      ],
+      "symbol_count": 1,
+      "pending_verification": false
+    },
+    {
+      "name": "cfd",
+      "label": "CFD",
+      "platform_section": "CFD",
+      "sdk_asset_class": "other",
+      "bitget_data_verified": false,
+      "new_instruments_allowed": false,
+      "live_trading_supported": false,
+      "default_execution_availability": "unavailable",
+      "symbols": [],
+      "symbol_count": 0,
+      "pending_verification": true
+    },
+    {
+      "name": "commodity",
+      "label": "Commodity",
+      "platform_section": "Commodity",
+      "sdk_asset_class": "commodity",
+      "bitget_data_verified": true,
+      "new_instruments_allowed": false,
+      "live_trading_supported": false,
+      "default_execution_availability": "signal_only",
+      "symbols": [
+        "AXTIUSDT"
+      ],
+      "symbol_count": 1,
+      "pending_verification": false
+    },
+    {
+      "name": "metal",
+      "label": "Metal",
+      "platform_section": "Metal",
+      "sdk_asset_class": "metal",
+      "bitget_data_verified": true,
+      "new_instruments_allowed": true,
+      "live_trading_supported": false,
+      "default_execution_availability": "signal_only",
+      "symbols": [
+        "XAUUSDT"
+      ],
+      "symbol_count": 1,
+      "pending_verification": false
+    },
+    {
+      "name": "ai_index",
+      "label": "AI Indexes",
+      "platform_section": "AI Indexes",
+      "sdk_asset_class": "other",
+      "bitget_data_verified": false,
+      "new_instruments_allowed": false,
+      "live_trading_supported": false,
+      "default_execution_availability": "unavailable",
+      "symbols": [],
+      "symbol_count": 0,
+      "pending_verification": true
+    }
+  ],
+  "instruments": [
+    {
+      "symbol": "BTCUSDT",
+      "display_name": "Bitcoin",
+      "asset_class": "crypto",
+      "sdk_asset_class": "crypto",
+      "market_type": "contract",
+      "settlement": "crypto_perpetual",
+      "trading_session": "continuous_24x7",
+      "symbol_verification": "verified_public_api",
+      "verified": true,
+      "strategy_eligibility": "enabled",
+      "execution_availability": "signal_only",
+      "risk_profile": "standard",
+      "supported_indicators": [
+        "ema",
+        "rsi",
+        "atr",
+        "volume",
+        "parabolic_sar"
+      ],
+      "gates": {
+        "funding": true,
+        "session": false,
+        "parabolic_sar": false
+      },
+      "verified_metadata": {
+        "product_type": "USDT-FUTURES",
+        "market": "contract",
+        "trading_status": "normal",
+        "price_precision": 1,
+        "quantity_precision": 4,
+        "min_order_size": 0.0001,
+        "size_multiplier": 0.0001,
+        "base_coin": "BTC",
+        "quote_coin": "USDT",
+        "market_data_available": true,
+        "verified_at": "2026-09-21T21:18:41.818Z",
+        "source": "GET /api/v2/mix/market/contracts?productType=USDT-FUTURES&symbol=BTCUSDT",
+        "report": "output/instrument-verification/report-2026-09-21T21-18-47-701Z.json"
+      },
+      "price": null
+    },
+    {
+      "symbol": "XAUUSDT",
+      "display_name": "Gold",
+      "asset_class": "metal",
+      "sdk_asset_class": "metal",
+      "market_type": "contract",
+      "settlement": "rwa_perpetual",
+      "trading_session": "london_new_york",
+      "symbol_verification": "verified_public_api",
+      "verified": true,
+      "strategy_eligibility": "enabled",
+      "execution_availability": "signal_only",
+      "risk_profile": "standard",
+      "supported_indicators": [
+        "ema",
+        "rsi",
+        "atr",
+        "volume",
+        "parabolic_sar"
+      ],
+      "gates": {
+        "funding": false,
+        "session": true,
+        "parabolic_sar": false
+      },
+      "verified_metadata": {
+        "product_type": "USDT-FUTURES",
+        "market": "contract",
+        "trading_status": "normal",
+        "price_precision": 2,
+        "quantity_precision": 2,
+        "min_order_size": 0.01,
+        "size_multiplier": 0.01,
+        "base_coin": "XAU",
+        "quote_coin": "USDT",
+        "market_data_available": true,
+        "verified_at": "2026-09-21T21:18:43.941Z",
+        "source": "GET /api/v2/mix/market/contracts?productType=USDT-FUTURES&symbol=XAUUSDT",
+        "report": "output/instrument-verification/report-2026-09-21T21-18-47-701Z.json"
+      },
+      "price": null
+    },
+    {
+      "symbol": "AXTIUSDT",
+      "display_name": "WTI Oil (RWA proxy)",
+      "asset_class": "commodity",
+      "sdk_asset_class": "commodity",
+      "market_type": "contract",
+      "settlement": "rwa_perpetual",
+      "trading_session": "continuous_with_event_risk",
+      "symbol_verification": "verified_public_api",
+      "verified": true,
+      "strategy_eligibility": "enabled",
+      "execution_availability": "signal_only",
+      "risk_profile": "standard",
+      "supported_indicators": [
+        "ema",
+        "rsi",
+        "atr",
+        "volume",
+        "parabolic_sar"
+      ],
+      "gates": {
+        "funding": false,
+        "session": false,
+        "parabolic_sar": true
+      },
+      "verified_metadata": {
+        "product_type": "USDT-FUTURES",
+        "market": "contract",
+        "trading_status": "normal",
+        "price_precision": 2,
+        "quantity_precision": 2,
+        "min_order_size": 0.01,
+        "size_multiplier": 0.01,
+        "base_coin": "AXTI",
+        "quote_coin": "USDT",
+        "market_data_available": true,
+        "verified_at": "2026-09-21T21:18:45.827Z",
+        "source": "GET /api/v2/mix/market/contracts?productType=USDT-FUTURES&symbol=AXTIUSDT",
+        "report": "output/instrument-verification/report-2026-09-21T21-18-47-701Z.json"
+      },
+      "price": null
+    },
+    {
+      "symbol": "SP500USDT",
+      "display_name": "S&P 500 Index",
+      "asset_class": "stock",
+      "sdk_asset_class": "stock",
+      "market_type": "contract",
+      "settlement": "rwa_perpetual",
+      "trading_session": "us_equity_hours_proxy",
+      "symbol_verification": "verified_public_api",
+      "verified": true,
+      "strategy_eligibility": "enabled",
+      "execution_availability": "signal_only",
+      "risk_profile": "standard",
+      "supported_indicators": [
+        "ema",
+        "rsi",
+        "atr",
+        "volume",
+        "parabolic_sar"
+      ],
+      "gates": {
+        "funding": false,
+        "session": false,
+        "parabolic_sar": false
+      },
+      "verified_metadata": {
+        "product_type": "USDT-FUTURES",
+        "market": "contract",
+        "trading_status": "normal",
+        "price_precision": 1,
+        "quantity_precision": 4,
+        "min_order_size": 0.0001,
+        "size_multiplier": 0.0001,
+        "base_coin": "SP500",
+        "quote_coin": "USDT",
+        "market_data_available": true,
+        "verified_at": "2026-09-21T21:18:47.701Z",
+        "source": "GET /api/v2/mix/market/contracts?productType=USDT-FUTURES&symbol=SP500USDT",
+        "report": "output/instrument-verification/report-2026-09-21T21-18-47-701Z.json"
+      },
+      "price": null
+    }
+  ]
+}

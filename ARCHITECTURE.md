@@ -223,16 +223,41 @@ then fails safe to `hold`, it never trades on a suspect config.
 4. Choose a risk profile; it may only tighten global risk.
 5. Add parity/error tests in `tests/python/test_instruments.py`.
 6. Run `npm run check`, `npm test`, `npm run test:python`, `npm run validate`.
+7. Regenerate the dashboard export (`npm run dashboard:registry`); the
+   drift check in `tests/dashboard-registry.test.mjs` fails otherwise.
+
+### Dashboard registry export (`scripts/generate-dashboard-registry.mjs`)
+
+The React dashboard never talks to the strategy or the network in Milestone 1.
+It renders a static, generated export of the validated instrument registry:
+
+- `npm run dashboard:registry` runs `scripts/export_registry.py`, which loads
+  `manifest.yaml` through `src/instruments.py` (`InstrumentRegistry`) and
+  writes `dashboard/src/data/instruments.json`. Anything the registry
+  validator rejects can never reach the dashboard.
+- Deterministic: same manifest bytes -> same JSON bytes (no generation
+  timestamps; `verified_at` values are copied verbatim from the manifest).
+- `npm run dashboard:registry:check` (and the JS test suite) fail on drift
+  between the committed export and `manifest.yaml`.
+- Honesty rules enforced by tests: `verified` is derived only from registry
+  provenance; `verified_metadata` is emitted only for verified symbols;
+  empty sections export `pending_verification: true` and render "Pending
+  verification" - fabricated instruments are impossible; `price` is always
+  `null` and `live_prices` is `false` until the read-only feed milestone.
+- The old hackathon mock machinery (mockAssets/mockStream/
+  useMockMarketStream, Sparkline, SentimentMeter) is deleted. Market panels
+  show registry facts and "Live data coming next" instead of random walks.
 
 ## 6. Testing & Verification Pipeline
 
 - `npm test` - JS suite (`tests/*.test.mjs`, node --test): packaging
-  legality, dashboard separation, secret scanner, gitignore coverage.
+  legality, dashboard separation, secret scanner, gitignore coverage, and
+  the dashboard registry export (`tests/dashboard-registry.test.mjs`).
 - `npm run test:python` (via `node scripts/run-python-tests.mjs`) -
-  128 unittest cases: 56 original strategy regression tests + 72 registry
+  131 unittest cases: original strategy regression tests plus registry
   tests (parity for the four originals, unknown symbols, missing config,
   unsupported classes, invalid risk profiles, disabled execution, missing
-  market data).
+  market data, recorded public-API verification metadata).
 - `npm run check` - secret scan, JS syntax, Python syntax, official
   Playbook validator on the staged package.
 - `npm run dashboard:build` - Vite production build of `dashboard/`.

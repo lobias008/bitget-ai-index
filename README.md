@@ -93,7 +93,12 @@ ARCHITECTURE.md   Platform + instrument registry architecture
 
 The React dashboard and the Python strategy are deliberately separated. `src/`
 is the uploadable Python package and must contain only Python. UI code lives
-under `dashboard/`. Local-only directories (`node_modules/`, `dist/`,
+under `dashboard/`. The dashboard renders a generated export of the validated
+instrument registry (`dashboard/src/data/instruments.json`, produced by
+`npm run dashboard:registry`, drift-checked by `dashboard:registry:check`
+and the test suite). It never fabricates prices or market activity: live
+read-only market data is a later milestone. Local-only directories
+(`node_modules/`, `dist/`,
 `output/`, caches) are gitignored and never committed.
 
 ## Safe Local Commands
@@ -107,6 +112,8 @@ npm run test:python        # Python strategy + registry tests
 npm run check              # secrets + JS syntax + Python syntax + package validation
 npm run check:secrets      # scan for hardcoded credentials
 npm run verify:instruments # read-only Bitget public-API symbol verification
+npm run dashboard:registry # regenerate dashboard/src/data/instruments.json
+npm run dashboard:registry:check # fail if the dashboard export drifted
 npm run validate           # official GetAgent validator on a staged package
 npm run package            # build the upload tarball locally (no upload)
 ```
