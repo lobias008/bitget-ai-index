@@ -1,0 +1,60 @@
+{
+  "mode": "replay",
+  "generated_at_ms": 1790084128674,
+  "strategy_version": "the-morning-sword@1.0.0",
+  "data_source": "rest",
+  "config": {
+    "initial_balance": "1000",
+    "fee_pct": "0.06",
+    "slippage_pct": "0.02",
+    "days": 90,
+    "source": "rest",
+    "replay_funding": "block",
+    "seed": 20260921,
+    "symbols": [
+      "BTCUSDT",
+      "XAUUSDT",
+      "AXTIUSDT",
+      "SP500USDT"
+    ]
+  },
+  "window": {
+    "start_ms": 1782316800000,
+    "end_ms": 1790078400000,
+    "start": "2026-06-24T16:00:00Z",
+    "end": "2026-09-22T12:00:00Z"
+  },
+  "coverage": {
+    "BTCUSDT": {
+      "daily_bars": 359,
+      "four_hour_bars": 799,
+      "steps_with_data": 540
+    },
+    "XAUUSDT": {
+      "daily_bars": 283,
+      "four_hour_bars": 799,
+      "steps_with_data": 444
+    },
+    "AXTIUSDT": {
+      "daily_bars": 134,
+      "four_hour_bars": 799,
+      "steps_with_data": 0
+    },
+    "SP500USDT": {
+      "daily_bars": 123,
+      "four_hour_bars": 740,
+      "steps_with_data": 0
+    }
+  },
+  "errors": [],
+  "safety": {
+    "live_orders_placed": false,
+    "private_api_used": false,
+    "api_scope": "public_read_only_market_data",
+    "execution_mode": "signal_only"
+  },
+  "labels": [
+    "PAPER",
+    "SIMULATED"
+  ]
+}
