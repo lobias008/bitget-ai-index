@@ -81,10 +81,12 @@ manifest.yaml     Playbook manifest (package root - required path)
 README.md         This document (package root - required path)
 src/main.py       Foundation strategy. Deterministic Playbook logic.
 src/instruments.py Configuration-driven instrument registry (7 asset classes)
+paper/            Paper-trading simulator - local, simulated, GET-only public data
 index.js          Inert, env-driven Playbook definition. No side effects on import.
 dashboard/        React + Vite UI - its own package with its own dependencies
 scripts/          Safe local tooling (status, check, validate, package, verify)
 tests/            Test suite (JS via node:test, Python via unittest)
+output/           Generated run artifacts (gitignored, never committed)
 requirements.txt  Python deps for local validation of src/main.py
 .env.example      Environment variable NAMES only - never real values
 AGENTS.md         Permanent project safety rules
@@ -118,6 +120,22 @@ npm run validate           # official GetAgent validator on a staged package
 npm run package            # build the upload tarball locally (no upload)
 ```
 
+Paper trading (simulated only - never places an order):
+
+```powershell
+npm run paper:signals      # generate + classify paper signals from the strategy
+npm run paper:simulate     # replay them through the simulator and export
+npm run paper:export       # re-export the latest run to dashboard/public/
+npm run paper:status       # print the latest run summary and artifact paths
+```
+
+AI-assisted paper trading (veto-only reviewer - still never places an order):
+
+```powershell
+npm run ai:review          # AI-gated replay; the reviewer may VETO signals
+npm run ai:status          # print the latest AI run summary and artifact paths
+```
+
 Dashboard:
 
 ```powershell
@@ -128,6 +146,88 @@ npm run dashboard:build    # production build into dashboard/dist
 
 Python is resolved automatically by the tooling; override with `$env:PYTHON_BIN`
 if needed. Local validation also needs PyYAML (`pip install -r requirements.txt`).
+
+## Paper trading (Milestone 2)
+
+A local, simulated workflow that feeds the existing deterministic strategy's
+signals into a paper simulator and reports hypothetical P&L. **It never trades,
+never uses a private API, and never needs credentials.**
+
+- Signals come from the unchanged strategy through an injected data provider
+  and clock, and are classified `actionable_paper`, `blocked`, or
+  `informational`. A blocked signal records why (funding gate, session gate,
+  Parabolic SAR, circuit-breaker lock, unknown or disabled symbol, data
+  failure) and is never filled.
+- Market data is GET-only against allowlisted public Bitget endpoints. A
+  `synthetic` source exists for offline development and is labelled as such in
+  every artifact. Missing, stale, or malformed data is reported - never
+  fabricated. Only closed bars are visible at each decision time, so there is
+  no look-ahead bias.
+- The simulator is deterministic and uses exact `Decimal` accounting. It
+  mirrors the strategy's own sizing and exit lifecycle (stop loss, 50% partial
+  at 2R, stop to breakeven, runner to 4R or the Parabolic SAR trail), applies
+  configurable fees and slippage, rejects duplicate signals, and preserves the
+  daily circuit breaker (-2%, flatten, 24h lock).
+- Artifacts are written to gitignored `output/paper/` and exported to
+  `dashboard/public/paper-summary.json`, which the dashboard renders in the
+  Paper Trading panel. Every figure is badged **PAPER / SIMULATED** with the
+  snapshot's last-updated timestamp. If no run exists yet, the panel says so
+  and shows the command to generate one - it never invents numbers.
+
+Typical loop:
+
+```powershell
+npm run paper:simulate     # generate signals, simulate, export to the dashboard
+npm run dashboard:dev      # open the dashboard and read the Paper Trading panel
+```
+
+Insufficient history is reported rather than padded, so a short data window
+yields an honest "insufficient history" result instead of manufactured
+performance.
+
+## AI-assisted paper trading (Milestone 3)
+
+A provider-agnostic, **veto-only** AI reviewer sits in front of the paper
+simulator. It can confirm, reject or watch a signal the deterministic strategy
+already produced - it can never create one, resize it, move a stop, widen a risk
+limit, or place an order. `execution_mode` stays `signal_only`, and the CLI
+refuses to run otherwise.
+
+- **One insertion point.** `paper/signals.run_replay(..., signal_filter=None)` may
+  be given a filter returning the subset of actionable signals allowed to reach
+  the simulator. Coverage and signal counts are recorded before the filter runs,
+  so a veto never hides what the strategy produced. With no filter, the replay is
+  identical to Milestone 2.
+- **Fail closed.** Invalid model output, a provider error, an exhausted
+  `AI_MAX_CALLS` budget and missing market data all drop the signal. An accepted
+  review still has to pass every deterministic control in `paper/simulator.py`
+  (duplicate guard, circuit breaker, position-open guard, sizing and margin).
+- **Strict contract.** The reply must be a single JSON object with `decision`
+  (`confirm` | `reject` | `watch`), `confidence` (0..1), `reasoning` and an
+  UPPER_SNAKE_CASE `reason_code`; anything else is discarded as `schema_invalid`.
+- **Allowlisted network.** `ai_advisor/providers.py` is the only module that
+  performs AI inference I/O and may POST only to `https://openrouter.ai/` or
+  `https://api.cloudflare.com/`. Credentials come from the environment, are never
+  logged or written to an artifact, and a missing credential is a configuration
+  error - never a silent fallback to the fixture.
+- **Honest labelling.** The default offline `fixture` provider and the
+  `synthetic` market-data source are both labelled SYNTHETIC in the CLI, in
+  `output/ai/ai-summary.json` and on the dashboard. No market data, fill or
+  performance figure is ever invented: a run with no real setup reports zero
+  fills rather than manufacturing activity.
+- **Point-in-time.** The reviewer sees only bars closed at or before the simulated
+  decision instant, and watch samples are audited after the replay so they can
+  never be promoted into a trade.
+
+Artifacts land in gitignored `output/ai/` (`ai-summary.json`, `decisions.jsonl`,
+plus the usual signals / fills / equity / events / positions / run-metadata
+files) and are exported to `dashboard/public/ai-summary.json`, rendered by
+`AiPanel.jsx` with every figure badged PAPER / SIMULATED.
+
+Configuration is environment-only and documented in `.env.example` (names, no
+values): `AI_PROVIDER`, `AI_MODEL`, `AI_BASE_URL`, `AI_TIMEOUT_S`, `AI_MAX_CALLS`,
+`AI_WATCH_SAMPLE`, `AI_TEMPERATURE`, plus `OPENROUTER_API_KEY` or
+`CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_AI_TOKEN` for a hosted provider.
 
 ## Publishing
 

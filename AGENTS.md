@@ -37,6 +37,11 @@ Preps, CFD, Commodities, Metals, AI Indexes).
 8. **Verify API capabilities before implementing them.** Read the installed SDK
    docs and confirm an endpoint/export actually exists before writing code
    against it. Do not invent functions, parameters, or response shapes.
+9. **Paper trading stays paper.** The `paper/` package may only issue GET
+   requests to allowlisted public market-data endpoints. It must never gain
+   credentials, order placement, or private-API access. Simulated results are
+   always labelled PAPER / SIMULATED, written to gitignored `output/`, and
+   never presented as live data or real performance.
 
 ---
 
@@ -86,10 +91,14 @@ manifest.yaml        Playbook manifest (package root - required path)
 README.md            Strategy doc (package root - required path, needs CJK markers)
 src/main.py          THE STRATEGY. Deterministic Playbook logic. Protect it.
 src/instruments.py   Config-driven instrument registry (parsed from manifest.yaml)
+paper/               Milestone 2 paper-trading simulator (local; GET-only public data)
+ai_advisor/          Milestone 3 veto-only AI reviewer (local; no order code)
 index.js             Inert, env-driven Playbook definition. Does NOT auto-run.
 dashboard/           React + Vite UI (separate package, own dependencies)
 scripts/             Safe local tooling (validate, package, gated publish)
 tests/               Test suite (local-only; never packaged for upload)
+output/              Generated run artifacts. Gitignored, never committed.
+dashboard/public/    Generated paper-summary.json for the UI. Gitignored.
 requirements.txt     Python deps for local validation of src/main.py
 ARCHITECTURE.md      System + instrument-registry design document
 .env.example         Variable NAMES only. Never real values.
@@ -133,6 +142,52 @@ npm run verify:instruments  # READ-ONLY Bitget public-API symbol verification
                          # (no auth, no account data, no orders; writes a
                          # report under output/instrument-verification/)
 ```
+
+Paper trading (Milestone 2) - simulated only, never places an order:
+
+```powershell
+npm run paper:signals    # generate + classify paper signals from the strategy
+npm run paper:simulate   # replay signals through the simulator, then export
+npm run paper:export     # re-export the latest run to dashboard/public/
+npm run paper:status     # print the latest run summary and artifact paths
+```
+
+All four wrap `python -m paper.cli` (exit 2 = configuration error, exit 3 =
+market data unavailable). Outputs land in gitignored `output/paper/`. Missing or
+invalid market data is reported, never fabricated.
+
+AI-assisted paper trading (Milestone 3) - a veto-only reviewer. Still simulated
+only, still never places an order:
+
+```powershell
+npm run ai:review      # AI-gated replay; the reviewer may VETO deterministic signals
+npm run ai:status      # print the latest AI run summary and artifact paths
+```
+
+Both wrap `python -m ai_advisor.cli`, which refuses to start unless
+`manifest.yaml` still declares `execution_mode: signal_only`. The default
+provider is the offline `fixture`, always labelled SYNTHETIC; a hosted provider
+(`openrouter`, `cloudflare`) requires its credential in the environment, and a
+missing credential is a configuration error - never a silent fallback. The AI can
+only remove a signal the deterministic strategy already produced: it can never
+create, resize, re-level or execute one, and every failure mode fails closed.
+Outputs land in gitignored `output/ai/`.
+
+### AI Review Layer Rules
+
+- `ai_advisor/` contains no order plumbing and may not gain any. The only
+  network code is `providers.py`, and it may POST only to an allowlisted AI
+  inference host. Do not add a Bitget endpoint, an auth header, or a private
+  route to this package.
+- The AI is advisory and veto-only. Never let it create a signal, change a
+  symbol, move a stop or target, resize a position, or relax a risk limit. Those
+  stay deterministic in `src/main.py` and `paper/simulator.py`.
+- Never fabricate a model reply, a market bar, a fill or a performance figure to
+  make a run look busy. A run with no real setup reports zero fills.
+- Never write a credential into a prompt, a log, an artifact, or a test fixture.
+  Error messages carry the HTTP status only, never a response body.
+- Anything produced by the offline fixture provider or the synthetic data source
+  must stay labelled SYNTHETIC everywhere it is shown.
 
 Gated, never automatic:
 

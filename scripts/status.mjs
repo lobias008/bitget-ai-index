@@ -58,6 +58,23 @@ function loadDotEnvStatus() {
   return { present: true, keys };
 }
 
+/**
+ * Read-only summary of the latest generated paper run. A missing or unreadable
+ * file is reported as such - this never fabricates a result.
+ */
+function readPaperRunStatus() {
+  const summaryPath = path.join(repoRoot, 'dashboard', 'public', 'paper-summary.json');
+  if (!fs.existsSync(summaryPath)) return 'none yet - run: npm run paper:simulate';
+  try {
+    const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+    const equity = summary.equity === null || summary.equity === undefined ? 'n/a' : summary.equity;
+    const source = summary.data_source === 'synthetic' ? 'SYNTHETIC data' : (summary.data_source ?? 'unknown source');
+    return `${summary.last_updated ?? 'unknown time'} | ${source} | equity ${equity} | PAPER / SIMULATED`;
+  } catch {
+    return 'present but unreadable - regenerate with: npm run paper:simulate';
+  }
+}
+
 function main() {
   const manifest = readManifestScalars();
   const git = gitSummary();
@@ -82,6 +99,7 @@ function main() {
   console.log(`    dashboard deps    : ${exists('dashboard/node_modules') ? 'installed' : 'NOT installed - run: npm run dashboard:install'}`);
   console.log(`    safe tooling      : ${exists('scripts') ? 'scripts/' : 'MISSING'}`);
   console.log(`    tests             : ${exists('tests') ? 'tests/' : 'MISSING'}`);
+  console.log(`    paper simulator   : ${exists('paper/cli.py') ? 'paper/ (simulated, GET-only public data)' : 'MISSING'}`);
   console.log('');
   console.log('  Playbook contract (from manifest.yaml)');
   console.log(`    name              : ${manifest.name ?? 'unknown'}`);
@@ -106,6 +124,8 @@ function main() {
   }
   const gates = checkPublishGates();
   console.log(`    publish gates     : ${gates.length ? `${gates.length} unmet (publish blocked)` : 'ALL SATISFIED - publish is possible'}`);
+  console.log('    paper trading     : SIMULATED ONLY - places no orders, uses no private API');
+  console.log(`    latest paper run  : ${readPaperRunStatus()}`);
   console.log('');
   console.log('  Safe commands');
   console.log('    npm test                 run the test suite (offline)');
@@ -114,6 +134,10 @@ function main() {
   console.log('    npm run validate         run the official Playbook validator');
   console.log('    npm run package          build the upload tarball locally (no upload)');
   console.log('    npm run dashboard:dev    start the React dashboard dev server');
+  console.log('    npm run paper:signals    generate + classify paper signals (simulated)');
+  console.log('    npm run paper:simulate   replay signals through the paper simulator');
+  console.log('    npm run paper:export     re-export the latest run to dashboard/public/');
+  console.log('    npm run paper:status     print the latest paper run summary');
   console.log('');
   console.log('  Gated (never automatic, always requires explicit confirmation)');
   console.log('    npm run playbook:publish -- --dry-run');

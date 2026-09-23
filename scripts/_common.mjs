@@ -79,7 +79,15 @@ export function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     encoding: 'utf8',
     cwd: options.cwd ?? repoRoot,
-    env: { ...process.env, PYTHONIOENCODING: 'utf-8', ...(options.env ?? {}) },
+    // PYTHONDONTWRITEBYTECODE keeps __pycache__ out of the working tree: the
+    // secret/bytecode test asserts none is present, so a stray .pyc written by
+    // one script would fail a later `npm test`.
+    env: {
+      ...process.env,
+      PYTHONIOENCODING: 'utf-8',
+      PYTHONDONTWRITEBYTECODE: '1',
+      ...(options.env ?? {}),
+    },
     input: options.input,
     stdio: options.stdio,
   });

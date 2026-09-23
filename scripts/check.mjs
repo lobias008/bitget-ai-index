@@ -42,7 +42,7 @@ function collectPyFiles() {
       else if (entry.name.endsWith('.py')) out.push(full);
     }
   };
-  for (const dir of ['src', path.join('tests', 'python')]) {
+  for (const dir of ['src', 'paper', 'ai_advisor', path.join('tests', 'python')]) {
     const absolute = path.join(repoRoot, dir);
     if (fs.existsSync(absolute)) walk(absolute);
   }

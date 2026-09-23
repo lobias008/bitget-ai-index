@@ -248,19 +248,104 @@ It renders a static, generated export of the validated instrument registry:
   useMockMarketStream, Sparkline, SentimentMeter) is deleted. Market panels
   show registry facts and "Live data coming next" instead of random walks.
 
+### Paper-trading workflow (`paper/`, Milestone 2)
+
+A local simulation layer that turns the unchanged deterministic strategy into
+simulated positions, fills, and hypothetical P&L. It never trades and never
+touches a private endpoint.
+
+- **Signal generation** (`paper/signals.py`) reuses `src/main.py` through
+  `paper/harness.py`, which injects a market-data provider and a clock in place
+  of the live SDK. Every signal records timestamp, symbol, timeframe,
+  direction, entry reference, stop, stop distance, 2R/4R targets, strategy
+  version, reason codes, gate results, and the full risk plan. Signals are
+  classified:
+  - `actionable_paper` - all strategy gates passed and the instrument is
+    registry-eligible with execution available, so the simulator may act;
+  - `blocked` - refused by a hard applicability gate (BTC funding, XAU session,
+    AXTI Parabolic SAR), a circuit-breaker lock, an unknown/disabled symbol, or
+    a data failure. Recorded with its reason and never traded;
+  - `informational` - the strategy evaluated the symbol and chose to watch.
+- **Market data** (`paper/market_data.py`) is GET-only against an allowlist
+  (`/api/v2/mix/market/`, `/api/v2/spot/market/`) with no auth headers and a
+  hard cap on pagination. A `synthetic` source supports offline development and
+  is labelled loudly in every artifact; `cache` replays previously fetched bars.
+  Stale, short, or malformed data raises - it is never coerced into a fake bar.
+  Only closed bars are served, so a decision at time T cannot see T+1.
+- **Simulator** (`paper/simulator.py`) is deterministic and uses `Decimal` for
+  all internal accounting; rounded floats appear only in display exports.
+  Sizing mirrors `_position_plan` exactly (1% of the margin budget at risk,
+  stop at ATR x 1.5, notional capped by margin x leverage). Exits follow the
+  documented lifecycle: stop loss, 50% partial at 2R, stop to breakeven
+  ("Free Trade"), runner to 4R or the Parabolic SAR trail. Within a bar, stops
+  are checked before take-profits and gap opens fill at the worse price - both
+  deliberately conservative. Fees and slippage are configurable per side. The
+  daily circuit breaker (-2%, flatten at close, 24h lock) is enforced in the
+  simulator and fed back into the strategy's own pre-trade check using only the
+  previous step's same-UTC-day P&L, so there is no look-ahead. Duplicate signals
+  (same symbol + timestamp) are rejected by key, entries are refused while a
+  position is open or the portfolio is locked, and a cross-position margin
+  guard rejects sizing that would over-commit.
+- **Storage** (`paper/storage.py`) writes `signals.jsonl`, `fills.jsonl`,
+  `positions.json`, `equity.jsonl`, `events.jsonl`, `run-metadata.json`, and
+  `paper-summary.json` under gitignored `output/paper/`, then exports the
+  summary to `dashboard/public/paper-summary.json`. Exact Decimal values are
+  preserved as strings in the logs. Run metadata records
+  `live_orders_placed: false` and `private_api_used: false`. No credentials or
+  account data are ever written.
+- **Dashboard** renders the summary in `components/market/PaperPanel.jsx` via
+  `hooks/usePaperSummary.js`: a one-shot fetch with manual reload (no polling
+  timers), a missing file is a supported "no run yet" state that explains how
+  to generate one, and every figure is badged PAPER / SIMULATED next to the
+  snapshot's `last_updated` timestamp. It is a static snapshot of a local run,
+  not a live feed, and it shows no prices of its own.
+
+Commands: `npm run paper:signals`, `npm run paper:simulate`,
+`npm run paper:export`, `npm run paper:status` - all wrap `python -m paper.cli`
+(exit 0 ok, 2 configuration error, 3 market data unavailable).
+
 ## 6. Testing & Verification Pipeline
 
-- `npm test` - JS suite (`tests/*.test.mjs`, node --test): packaging
-  legality, dashboard separation, secret scanner, gitignore coverage, and
-  the dashboard registry export (`tests/dashboard-registry.test.mjs`).
+- `npm test` - JS suite (`tests/*.test.mjs`, node --test), 126 cases: packaging
+  legality, dashboard separation, secret scanner, gitignore coverage, the
+  dashboard registry export (`tests/dashboard-registry.test.mjs`), the
+  paper-trading guards (`tests/paper.test.mjs`: GET-only market data, no
+  private-API or order plumbing in `paper/`, no publishing npm script,
+  gitignored artifacts, PAPER / SIMULATED labelling, no polling, no fabricated
+  prices), and the AI-review guards (`tests/ai.test.mjs`: no order or
+  private-API plumbing in `ai_advisor/`, exactly one network module, the
+  two-host HTTPS allowlist, status-only error messages, no hardcoded
+  credentials, no environment mutation, the veto hook as the single insertion
+  point, a distinct `ai-summary.json`, `signal_only` + `veto_only`, gitignored
+  artifacts, names-only `.env.example` AI variables, a non-polling dashboard
+  hook, a panel that fabricates nothing, and all 33 AI translation keys present
+  in both languages).
 - `npm run test:python` (via `node scripts/run-python-tests.mjs`) -
-  131 unittest cases: original strategy regression tests plus registry
-  tests (parity for the four originals, unknown symbols, missing config,
-  unsupported classes, invalid risk profiles, disabled execution, missing
-  market data, recorded public-API verification metadata).
-- `npm run check` - secret scan, JS syntax, Python syntax, official
-  Playbook validator on the staged package.
+  400 unittest cases: original strategy regression tests, registry tests
+  (parity for the four originals, unknown symbols, missing config, unsupported
+  classes, invalid risk profiles, disabled execution, missing market data,
+  recorded public-API verification metadata), 72 paper tests
+  (`tests/python/test_paper.py`: position sizing, entries, exits, circuit
+  breaker, signal classification, look-ahead, replay determinism, market-data
+  guards, snapshots, storage, configuration), and 186 AI-review tests
+  (`test_ai_schema.py`, `test_ai_providers.py`, `test_ai_advisor.py`,
+  `test_ai_replay.py`, `test_ai_safety.py`: the response contract, the URL
+  allowlist and provider failure modes, the fail-closed outcome ladder and the
+  veto-only filter, the AI-gated replay end to end including confirm-to-fill and
+  veto-to-no-fill, and the structural safety guarantees).
+- `npm run check` - secret scan, JS syntax, Python syntax (now walking
+  `ai_advisor/` too), official Playbook validator on the staged package.
 - `npm run dashboard:build` - Vite production build of `dashboard/`.
+- `npm run ai:review` / `npm run ai:status` - the AI-gated paper workflow
+  (section 9).
+
+Known pre-existing failures, unrelated to Milestone 3 and deliberately not
+"fixed" here: `tests/dashboard-registry.test.mjs` still asserts that the
+Milestone-1 mock-data file `dashboard/src/data/mockAssets.js` was deleted (it is
+retained but unused by the registry panels), and the two `tests/packaging.test.mjs`
+cases plus `npm run check` stage 4 require the root dependency
+`@bitget-ai/getagent-skill` to be installed with `npm install`. The JS totals
+above are therefore 123 passing / 3 known-failing; every Python case passes.
 
 ## 7. Packaging Constraints
 
@@ -269,3 +354,144 @@ Upload accepts ONLY `manifest.yaml`, `README.md`, `src/**`, `backtest.yaml`.
 `manifest.yaml`, `README.md`, `src/main.py`, `src/instruments.py`) and strips
 `__pycache__`/`*.pyc`. Local-only paths (`tests/`, `scripts/`, `dashboard/`,
 `output/`, `.tools/`, `.backup/`, `index.js`) must never enter the tarball.
+
+## 8. Paper Data Coverage & Funding Diagnostic (Milestone 2)
+
+`paper/storage.py` adds `build_data_coverage(signals, coverage)` and includes a
+`data_coverage` block plus `replay_funding` in every paper summary. Counts come
+from the run's real `coverage` and emitted signals; the bar thresholds come from
+`market_data.MIN_BARS` (210 closed daily / 120 closed 4h) and are never
+hardcoded in the dashboard. Each instrument carries two independent fields:
+
+- `data_eligibility`: `backtest_eligible` (has >= MIN_BARS closed daily and 4h
+  bars) or `pending_history`. Eligibility depends only on data readiness - a
+  symbol can be backtest eligible while producing zero actionable signals.
+- `signal_outcome`: `actionable_setup`, `no_actionable_setup`, `gated` (refused
+  by an applicability/risk gate such as `btc_funding_filter`,
+  `gold_london_or_ny_session`, `oil_parabolic_sar_confirmation`, or the circuit
+  breaker), or `not_evaluated` (insufficient history).
+
+`dashboard/src/components/market/PaperPanel.jsx` renders both fields, the
+`daily_bars / min_daily_bars` ratio, and the blocked-reason counts. The summary
+also carries `replay_funding`; the panel labels `neutral` runs prominently as an
+"Assumption-based diagnostic - not a verified historical-funding backtest",
+while conservative `block` mode remains the default. This work changes no
+strategy logic, risk limit, symbol, MIN_BARS value, or `execution_mode: signal_only`.
+
+## 9. AI-Assisted Paper Trading (Milestone 3)
+
+`ai_advisor/` adds a provider-agnostic, **veto-only** AI reviewer in front of the
+existing deterministic paper pipeline. It changes no strategy rule, risk limit,
+applicability gate, symbol, `MIN_BARS` value or `execution_mode`: the strategy
+still produces every signal and the simulator still enforces every control.
+
+### The single insertion point
+
+`paper/signals.run_replay(..., signal_filter=None)` gained one optional
+parameter. When supplied, the filter is called as
+`filter(decision_ms, actionable_signals, closed_bars)` and must return the subset
+that may be simulated. `all_signals` - and therefore coverage, signal counts and
+the dashboard's data-coverage panel - is recorded **before** the hook runs, so a
+veto can never hide what the deterministic strategy actually produced. With the
+default `None` the replay is identical to Milestone 2.
+
+Because the AI can only shrink a list handed to it, there is no code path by
+which it can create a signal, change a symbol, move a level, resize a position or
+unlock a gate. An `accepted` review is still not a trade: it then has to pass the
+duplicate guard, circuit breaker, position-open guard, missing-bar guard and the
+sizing/margin guards in `paper/simulator.py`.
+
+### Fail-closed outcome ladder
+
+`ai_advisor/advisor.py` evaluates these in order, and every non-accepting outcome
+drops the signal - so a broken, slow or dishonest model degrades the system
+toward doing nothing rather than toward trading.
+
+| Order | Outcome | Meaning |
+| --- | --- | --- |
+| 1 | `not_promotable` | not the classification this purpose may review, or no symbol/timestamp |
+| 2 | `skipped_no_market_data` | no closed public bars at the decision instant |
+| 3 | `budget_exhausted` | `AI_MAX_CALLS` reached; no provider call is made |
+| 4 | `provider_error` | transport failure, non-JSON reply, or unexpected provider exception |
+| 5 | `schema_invalid` | reply violated the response contract |
+| 6 | `accepted` / `vetoed` / `watched` | the model's decision |
+
+### Strict response contract
+
+`ai_advisor/schema.py` accepts exactly one JSON object carrying `decision`
+(`confirm` | `reject` | `watch`), `confidence` (number in 0..1; booleans are
+rejected), `reasoning` (<= 1200 chars) and `reason_code`
+(`^[A-Z][A-Z0-9_]{2,39}$`), plus optional `risk_notes` (<= 8 items x <= 240
+chars). Unknown keys, prose mixed into the object, multiple objects or a missing
+key raise `AiSchemaError` and the signal is not simulated. A markdown code fence
+is tolerated because it is a formatting artifact, not ambiguity.
+
+### Providers and the network allowlist
+
+`ai_advisor/providers.py` is the only module in the repository that performs AI
+inference I/O. `ALLOWED_AI_URL_PREFIXES` is `https://openrouter.ai/` and
+`https://api.cloudflare.com/`; the URL is re-checked immediately before every
+request - including a configured `AI_BASE_URL` - and URLs containing `..` or a
+space are rejected. No Bitget endpoint is reachable from this package: market
+data stays in `paper/market_data.py` (GET-only, public, allowlisted) and
+`ai_advisor` never imports it.
+
+Credentials are read from the environment at call time, are never logged, never
+written to an artifact and never placed in a prompt; error messages carry the
+HTTP status only, never a response body that could echo a key. A hosted provider
+with a missing credential is a configuration error (exit 2) - there is
+deliberately **no silent fallback to the fixture**.
+
+The default `fixture` provider is fully offline and deterministic. It is labelled
+SYNTHETIC in the CLI banner, in `ai-summary.json` (`ai.synthetic_model`,
+`ai.synthetic`) and on the dashboard, so it can never be mistaken for a real
+model opinion.
+
+### Point-in-time honesty
+
+`ai_advisor/replay.make_slicer(dataset)` serves the reviewer only bars whose
+close time is `<= decision_ms` (binary search over precomputed close times). A
+reviewer that could see the bar closing after the decision instant would be
+grading the strategy with information the strategy never had, and any "edge" it
+found would be look-ahead bias rather than skill.
+
+Watch samples (`AI_WATCH_SAMPLE`) are reviewed **after** `run_replay` returns, so
+no watch review can influence a fill; a `watch_sample` review that answers
+`confirm` is recorded as `not_promotable`, never `accepted`, so it cannot promote
+a setup the strategy declined.
+
+### Artifacts
+
+Written under gitignored `output/ai/`: `signals.jsonl`, `fills.jsonl`,
+`positions.json`, `equity.jsonl`, `events.jsonl`, `run-metadata.json`,
+`ai-summary.json` and `decisions.jsonl` (one JSON object per review, keys in
+`advisor.REVIEW_JSON_KEYS` order). The headline summary is deliberately named
+`ai-summary.json` rather than `paper-summary.json`, so an AI run and a paper run
+never overwrite each other's artifact. `run-metadata.json` carries
+`ai.safety = {live_orders_placed: false, private_api_used: false,
+execution_mode: "signal_only", ai_role: "veto_only"}`, and internal accounting
+stays exact - Decimal values are serialized as strings, never as rounded display
+numbers. No credential or account data is ever written.
+
+The summary is exported to gitignored `dashboard/public/ai-summary.json` and
+rendered by `components/market/AiPanel.jsx` through `hooks/useAiSummary.js`:
+one-shot fetch with manual reload (no polling timers), a missing file is a
+supported "no run yet" state, and every figure is badged PAPER / SIMULATED next
+to the snapshot's `last_updated` timestamp.
+
+`reconcile_accepted_with_fills` closes the audit loop: each accepted entry-gate
+review is annotated with what the simulator actually did (`filled`, with copied
+fill dicts; the matching event type; or `no_simulator_record`), matching exactly
+on symbol and decision timestamp and counting entry-side fills only, so a later
+exit can never be attributed to a review.
+
+### Commands
+
+`npm run ai:review` and `npm run ai:status` wrap `python -m ai_advisor.cli`
+(exit 0 ok, 2 configuration error, 3 market data unavailable). `main()` refuses
+to run at all unless `manifest.yaml` still declares `execution_mode:
+signal_only`. Fully offline demo, loudly labelled:
+
+```powershell
+npm run ai:review -- --source synthetic
+```

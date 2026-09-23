@@ -5,6 +5,8 @@ import ActiveStrategies from "./components/intent/ActiveStrategies";
 import CodeExportBox from "./components/intent/CodeExportBox";
 import AssetMatrix from "./components/market/AssetMatrix";
 import MacroPulse from "./components/market/MacroPulse";
+import PaperPanel from "./components/market/PaperPanel";
+import AiPanel from "./components/market/AiPanel";
 import ViralDrawer from "./components/viral/ViralDrawer";
 import { useBilingual } from "./hooks/useBilingual";
 import { useIntentStrategies } from "./hooks/useIntentStrategies";
@@ -25,6 +27,8 @@ export default function App() {
         </div>
         <div className="space-y-5">
           <MacroPulse t={t} registry={registry} />
+          <PaperPanel t={t} />
+          <AiPanel t={t} />
           <ActiveStrategies
             t={t}
             lang={lang}

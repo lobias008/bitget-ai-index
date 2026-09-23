@@ -50,6 +50,10 @@ logs/
 output/
 *.tar.gz
 
+# --- Generated paper-trading artifacts (Milestone 2) ---
+# The dashboard reads this generated summary at runtime; it is never committed.
+dashboard/public/
+
 # --- Local state & caches ---
 *.local
 *.state
