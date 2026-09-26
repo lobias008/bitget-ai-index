@@ -241,6 +241,37 @@ class CloudflareProvider(BaseProvider):
                 {"role": "system", "content": request.system},
                 {"role": "user", "content": request.user},
             ],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "type": "object",
+                    "properties": {
+                        "decision": {
+                            "type": "string",
+                            "enum": ["confirm", "reject", "watch"]
+                        },
+                        "confidence": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                        },
+                        "reasoning": {"type": "string"},
+                        "reason_code": {"type": "string"},
+                        "risk_notes": {
+                            "type": "array",
+                            "items": {"type": "string"}
+                        }
+                    },
+                    "required": [
+                        "decision",
+                        "confidence",
+                        "reasoning",
+                        "reason_code",
+                        "risk_notes"
+                    ],
+                    "additionalProperties": False
+                }
+            }
         }
         headers = {
             "Content-Type": "application/json",
@@ -260,10 +291,12 @@ def _extract_cloudflare_text(payload: Any) -> str:
         code = errors[0].get("code") if errors and isinstance(errors[0], dict) else None
         raise AiProviderError(f"AI provider reported an error (code {code})")
     result = payload.get("result")
-    text = result.get("response") if isinstance(result, dict) else None
-    if not isinstance(text, str) or not text.strip():
-        raise AiProviderError("AI provider returned an empty completion")
-    return text
+    response = result.get("response") if isinstance(result, dict) else None
+    if isinstance(response, dict):
+        return json.dumps(response)
+    if isinstance(response, str) and response.strip():
+        return response
+    raise AiProviderError("AI provider returned an empty completion")
 
 
 def build_provider(config: AiConfig, env=None) -> BaseProvider:
@@ -303,3 +336,6 @@ def build_provider(config: AiConfig, env=None) -> BaseProvider:
             timeout_s=config.timeout_s,
         )
     raise AiProviderError(f"unsupported AI provider {provider!r}")
+
+
+

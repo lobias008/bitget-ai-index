@@ -230,7 +230,7 @@ class AiAdvisor:
         except Exception as exc:  # noqa: BLE001 - any failure must fail closed
             return self._record(
                 review, outcome=OUTCOME_PROVIDER_ERROR, reason_code="PROVIDER_ERROR",
-                detail=f"unexpected provider failure: {type(exc).__name__}",
+                detail=f"unexpected provider failure: {type(exc).__name__}: {exc}",
             )
 
         try:
@@ -300,3 +300,4 @@ def make_ai_filter(advisor: AiAdvisor, slicer: Callable[[str, str, int], Sequenc
         return accepted
 
     return _filter
+
