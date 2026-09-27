@@ -11,22 +11,24 @@ import ViralDrawer from "./components/viral/ViralDrawer";
 import { useBilingual } from "./hooks/useBilingual";
 import { useIntentStrategies } from "./hooks/useIntentStrategies";
 import registry from "./data/instruments.json";
+import { useLivePrices } from "./hooks/useLivePrices";
 
 export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const liveRegistry = useLivePrices(registry);
   const { lang, setLang, t, prompts } = useBilingual();
   const { strategies, latestStrategy, executeIntent, toggleStrategy, deleteStrategy } = useIntentStrategies(lang);
 
   return (
-    <Shell t={t} lang={lang} setLang={setLang} registry={registry} onViralOpen={() => setDrawerOpen(true)}>
+    <Shell t={t} lang={lang} setLang={setLang} registry={liveRegistry} onViralOpen={() => setDrawerOpen(true)}>
       <div className="grid gap-5 xl:grid-cols-[1.35fr_0.9fr]">
         <div className="space-y-5">
           <CommandIntent t={t} prompts={prompts} onExecute={executeIntent} />
           <CodeExportBox t={t} lang={lang} strategy={latestStrategy} />
-          <AssetMatrix t={t} registry={registry} />
+          <AssetMatrix t={t} registry={liveRegistry} />
         </div>
         <div className="space-y-5">
-          <MacroPulse t={t} registry={registry} />
+          <MacroPulse t={t} registry={liveRegistry} />
           <PaperPanel t={t} />
           <AiPanel t={t} />
           <ActiveStrategies

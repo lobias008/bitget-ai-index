@@ -34,7 +34,7 @@ export default function AssetRow({ instrument, t }) {
       </div>
       <div className="rounded-lg border border-neon/15 bg-black/40 p-3 text-center">
         <p className="text-[10px] uppercase text-steel">{t.price}</p>
-        <p className="font-mono text-sm text-neon">{t.pricesPending}</p>
+        <p className="font-mono text-sm text-neon">{instrument.price != null ? Number(instrument.price).toLocaleString(undefined, { maximumFractionDigits: instrument.verified_metadata?.price_precision ?? 8 }) : t.pricesPending}</p>
       </div>
     </div>
   );
