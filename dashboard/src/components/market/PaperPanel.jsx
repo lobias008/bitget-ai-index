@@ -167,6 +167,47 @@ export default function PaperPanel({ t }) {
                     <span className="truncate text-steel">
                       {(signal.reason_codes || []).join(", ") || "-"}
                     </span>
+
+                    <div className="mt-2 w-full border-t border-neon/10 pt-2">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-5">
+                        <span className="text-steel">
+                          Confidence: <span className="text-white">{Math.round((signal.confidence ?? 0) * 100)}%</span>
+                        </span>
+                        <span className="text-steel">
+                          Entry: <span className="text-white">{signal.entry_reference ?? "-"}</span>
+                        </span>
+                        <span className="text-steel">
+                          SL: <span className="text-crimson">{signal.stop_loss ?? "-"}</span>
+                        </span>
+                        <span className="text-steel">
+                          2R: <span className="text-mint">{signal.target_2r ?? "-"}</span>
+                        </span>
+                        <span className="text-steel">
+                          4R: <span className="text-mint">{signal.target_4r ?? "-"}</span>
+                        </span>
+                      </div>
+
+                      {signal.checks && Object.keys(signal.checks).length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {Object.entries(signal.checks).map(([name, passed]) => (
+                            <span
+                              key={name}
+                              className={`rounded border px-1.5 py-0.5 text-[9px] ${
+                                passed
+                                  ? "border-mint/25 text-mint"
+                                  : "border-crimson/30 text-crimson"
+                              }`}
+                            >
+                              {passed ? "PASS" : "FAIL"} {name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {signal.error && (
+                        <p className="mt-2 text-[10px] text-crimson">{signal.error}</p>
+                      )}
+                    </div>
                   </li>
                 ))}
             </ul>
