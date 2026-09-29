@@ -1,11 +1,20 @@
 export default function StatusRail({ t, registry }) {
   const verifiedCount = registry.instruments.filter((instrument) => instrument.verified).length;
+  const livePriceCount = registry.instruments.filter(
+    (instrument) => instrument.price != null
+  ).length;
+
+  const priceStatus =
+    livePriceCount > 0
+      ? `LIVE PRICES: ${livePriceCount}/${registry.instruments.length}`
+      : t.pricesPending;
+
   const items = [
     `${t.executionMode}: ${registry.execution_mode}`,
     `${t.liveTrading}: ${t.disabled}`,
     `${t.instrumentsVerified}: ${verifiedCount}/${registry.instruments.length}`,
     `${t.sections}: ${registry.asset_classes.length}`,
-    t.pricesPending,
+    priceStatus,
   ];
 
   return (
