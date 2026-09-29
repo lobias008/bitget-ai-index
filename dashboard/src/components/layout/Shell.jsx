@@ -7,7 +7,8 @@ export default function Shell({ children, t, lang, setLang, registry, onViralOpe
       <div className="grid-floor" />
       <Header t={t} lang={lang} setLang={setLang} onViralOpen={onViralOpen} />
       <StatusRail t={t} registry={registry} />
-      <main className="mx-auto max-w-7xl px-4 py-6 lg:py-8">{children}</main>
+      <main className="mx-auto w-full max-w-[1800px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
     </div>
   );
 }
+
