@@ -98,8 +98,9 @@ is the uploadable Python package and must contain only Python. UI code lives
 under `dashboard/`. The dashboard renders a generated export of the validated
 instrument registry (`dashboard/src/data/instruments.json`, produced by
 `npm run dashboard:registry`, drift-checked by `dashboard:registry:check`
-and the test suite). It never fabricates prices or market activity: live
-read-only market data is a later milestone. Local-only directories
+and the test suite). It never fabricates prices or market activity. The dashboard uses
+read-only Bitget public market data for live price intelligence; this does not enable
+private API access, order placement, or live execution. Local-only directories
 (`node_modules/`, `dist/`,
 `output/`, caches) are gitignored and never committed.
 
