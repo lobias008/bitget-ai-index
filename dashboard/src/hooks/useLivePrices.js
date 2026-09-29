@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const API = "https://api.bitget.com/api/v2/mix/market/ticker";
 const REFRESH_MS = 10000;
@@ -47,9 +47,28 @@ export function useLivePrices(registry) {
             throw new Error(`${symbol}: invalid price`);
           }
 
+          const change24h = Number(ticker?.change24h);
+          const high24h = Number(ticker?.high24h);
+          const low24h = Number(ticker?.low24h);
+          const quoteVolume = Number(ticker?.quoteVolume);
+          const markPrice = Number(ticker?.markPrice);
+
           return {
             symbol,
             price,
+            change24h: Number.isFinite(change24h) ? change24h : null,
+            high24h: Number.isFinite(high24h) ? high24h : null,
+            low24h: Number.isFinite(low24h) ? low24h : null,
+            quoteVolume: Number.isFinite(quoteVolume) ? quoteVolume : null,
+            markPrice: Number.isFinite(markPrice) ? markPrice : null,
+            direction:
+              Number.isFinite(change24h)
+                ? change24h > 0
+                  ? "bullish"
+                  : change24h < 0
+                    ? "bearish"
+                    : "flat"
+                : "unknown",
             updatedAt: Number(ticker.ts || Date.now()),
           };
         })
@@ -86,6 +105,12 @@ export function useLivePrices(registry) {
       instruments: (registry.instruments || []).map((instrument) => ({
         ...instrument,
         price: prices[instrument.symbol]?.price ?? null,
+        change_24h: prices[instrument.symbol]?.change24h ?? null,
+        high_24h: prices[instrument.symbol]?.high24h ?? null,
+        low_24h: prices[instrument.symbol]?.low24h ?? null,
+        quote_volume_24h: prices[instrument.symbol]?.quoteVolume ?? null,
+        mark_price: prices[instrument.symbol]?.markPrice ?? null,
+        market_direction: prices[instrument.symbol]?.direction ?? "unknown",
         price_updated_at:
           prices[instrument.symbol]?.updatedAt ?? null,
       })),
